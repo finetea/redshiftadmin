@@ -37,6 +37,9 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'pybatis', #need jinja2
+    'django_tables2',
+	'redshift',
 )
 
 MIDDLEWARE_CLASSES = (
