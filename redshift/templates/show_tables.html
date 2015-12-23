@@ -1,2 +1,52 @@
 {% load django_tables2 %}
-{% render_table table %}
+
+<html>
+<head>
+	<title>Redshift Table List</title>
+
+	<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.10/css/jquery.dataTables.min.css">
+
+	<style type="text/css">
+		div.fw-body li {
+			padding: 0.33em 0.5em;
+		}
+		div.fw-body li ul {
+			margin-top: 0;
+		}
+		#usedBy div {
+			height: 93px;
+			line-height: 93px;
+		}
+		#usedBy img {
+			vertical-align: middle;
+			margin: 0 auto;
+		}
+		div.grid.margin {
+			margin-bottom: 1em;
+		}
+		ul.blog_link_list {
+			margin: 0;
+		}
+	</style>
+
+	<script type="text/javascript" language="javascript" src="//code.jquery.com/jquery-1.11.3.min.js"></script>
+	<script type="text/javascript" language="javascript" src="https://cdn.datatables.net/1.10.10/js/jquery.dataTables.min.js"></script>
+	<script type="text/javascript">
+
+		$(document).ready( function () {
+			$('#table_id').dataTable();
+		} );
+	</script>
+</head>
+
+<body>
+	<div>
+		<h>Table List</h>
+	</div>
+	<div>
+		{% render_table table %}
+	</div>
+
+</body>
+
+</html>

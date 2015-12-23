@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html>
+<head><title>Pybatis</title></head>
+<body>
+<p>brought to you by Cystems Technology</p>
+<p>written by Manni Wood, mwood a t cystems-tech.com, based on
+Clinton Begin's original idea in 
+<a href="http://ibatis.apache.org">iBATIS</a>.</p>
+
+<h2><a href="pybatis-1.5.tar.gz">Download Pybatis 1.5</a></h2>
+
+<h1>Pybatis</h1>
+
+<h2>Overview</h2>
+<p>Pybatis is three things combined: Python's 
+<a href="http://www.python.org/dev/peps/pep-0249/">DB API</a> + 
+<a href="http://jinja.pocoo.org/2/">templates</a> + convenience
+methods. The intent is to use a templating engine to generate SQL in the same
+way we use templating engines to generate HTML.
+Here, the similarities end. On the one hand, we generate HTML to send to
+a browser. With Pybatis, we generate SQL to send to the database via Python's
+DB API, and gather our results.</p>
+<p>The core idea of treating dynamic SQL as
+a templating problem rather than a code generation problem (as
+in most ORM libraries) comes from 
+<a href="http://ibatis.apache.org">iBATIS</a>, after which
+Pybatis is named, with great respect.</p>
+
+<h2>First Example</h2>
+<p>Let's dive in with a code example. Say you want to select two columns, ID
+and NAME, from a table in your database, but 
+sometimes you'd optionally like to show a third column, COLOR, too.</p>
+<p>Let's also say your Python code has gathered
+user input in a dict called form_values, and that if
+ form_values["SHOW_COLOR"] contains the string "true", you'll show
+the COLOR column in your SQL select results.</p>
+<p>So that we have a basis of comparison, let's look at
+a regular solution just using DB API:</p>
+<pre>
+import psycopg2
+conn = psycopg2.connect('user=theuser dbname=petstoredb')
+curs = conn.cursor()
+sql = '''
+   select id as "ID",
+'''
+show_color = form_values.get("SHOW_COLOR") is not None and  == "true":
+if show_color is not None and show_color == "true":
+    sql += '''
+    color as "COLOR",
+    ''''
+sql += '''
+     name as "NAME"
+     from pets
+'''
+results = curs.execute(sql)
+</pre>
+<p>What we're doing is conditionally generating SQL
+and then feeding it to our database before asking for the
+results. Here's how
+you'd do the same thing in Pybatis:</p>
+<pre>
+import psycopg2
+import psycopg2.extras
+import pybatis
+import pybatis.psycopg2_jinja2
+
+conn = psycopg2.connect('user=theuser dbname=petstoredb')
+SQL_MAP = pybatis.psycopg2_jinja2.SQLMap(conn, '/petstore-app/pybatis')
+results = SQL_MAP.select_commit(inline='''
+   select id      as "ID",
+          {% if SHOW_COLOR is not_empty and SHOW_COLOR == 'true' %}
+          color  as "COLOR",
+          {% endif %}
+          name    as "NAME"
+     from pets
+''', map=form_values)
+</pre>
+<p>NOTE for Jinja2 users: the not_empty test is introduced
+automatically by Pybatis. The not_empty test returns true if the 
+tested variable
+is not in the context at all (ie, is an instance of 
+Jinja's special Undefined object)
+or is defined but is None, or is defined and not None but is 
+the empty string.</p>
+<p>At its core, all Pybatis does is bring templates to bear on
+the problem, to make your code easier to maintain.</p>
+<p>Of course,
+the ramifications of this simple decision are worth contemplating.
+For instance, now that our SQL can be generated using a template
+language, do we even have to keep our SQL in our source code
+anymore? What if the same piece of SQL gets used by more than
+one part of the application? Can we store the SQL template
+code in its own file? Yes, of course:</p>
+<p>Put the above SQL template code in a file named
+/petstore-app/pybatis/select_pets.sql with the following
+contents:</p>
+<pre>
+   select id      as "ID",
+          {% if SHOW_COLOR is not_empty and SHOW_COLOR == 'true' %}
+          color  as "COLOR",
+          {% endif %}
+          name    as "NAME"
+     from pets
+</pre>
+<p>and then your calling code would look more like this:</p>
+<pre>
+import psycopg2
+import psycopg2.extras
+import pybatis
+import pybatis.psycopg2_jinja2
+
+conn = psycopg2.connect('user=theuser dbname=petstoredb')
+SQL_MAP = pybatis.psycopg2_jinja2.SQLMap(conn, '/petstore-app/pybatis')
+
+results = SQL_MAP.select_commit(file='select_pets.sql', map=form_values)
+</pre>
+<p>Which is more readable and maintainable is certainly a topic
+for a great flame war. Pybatis lets you do both, and, from personal
+experience, I've used both styles within the same project.</p>
+<p>Now, on to the rest of the details.</p>
+
+<h2>Using Pybatis</h2>
+<h3>Dependencies</h3>
+Pybatis currently only has one dependency: 
+the <a href="http://jinja.pocoo.org/2/">Jinja2</a> templating engine.
+Ensure that it is installed
+<h3>Configuring a SQL map</h3>
+<p>The first thing you need to do is configure a SQL map to
+use in the rest of your code. You'll almost always use a SQL map
+like a singleton: configure it once at application startup,
+and call on the one intance everywhere else you need to interact
+with your database. But you aren't forced to: if you need to 
+connect with more than
+one database, or if you need to connect to the same database
+with different configurations (perhaps different user permissions) you
+may configure two or more SQL maps.</p>
+<p>The first thing to do when configuring a SQL map is choose
+a flavour.  Each SQL map implementation is named after the 
+DB API driver it supports and the templating engine it uses. For now, 
+Pybatis only supports the psycopg2 driver for PostgreSQL, and
+the <a href="http://jinja.pocoo.org/2/">Jinja2</a> templating engine.
+So right now, the choice of which map to use is easy; there's only
+one. :-)</p>
+<p>(<strong>NOTE</strong> that Pybatis therefore needs both 
+<a href="http://jinja.pocoo.org/2/">Jinja2</a> and 
+<a href="http://initd.org/pub/software/psycopg/">Psycopg2</a>
+installed before you can use it.)</p>
+<pre>
+import psycopg2
+import psycopg2.extras
+import pybatis
+import pybatis.psycopg2_jinja2
+
+conn = psycopg2.connect('user=theuser dbname=petstoredb')
+SQL_MAP = pybatis.psycopg2_jinja2.SQLMap(conn, '/petstore-app/pybatis')
+</pre>
+<p>Already, there are a few things to note. First, Pybatis needs to be handed
+a database connection. Pybatis does not create its own database connections,
+and most certainly does not provide connection pooling. There are plenty of 
+connection poolers out there, and I felt no need to write one myself.</p>
+<p>This would, however, be a good time to point out that often you don't need
+a database connection pooler. For instance, in a desktop web application with
+only one connection to the database, no connection pooling is necessary: 
+you create
+your one connection to the database and hand it to the one SQL map you
+will use throughout the application.</p>
+<p>In a web application, you may need to figure out a way to hand connections
+from a connection pool to your SQL map. Do note, however, that on Apache
+using the pre-fork MPM and mod_wsgi, each Apache process contains its own 
+Python 
+interpreter, and, in a framework like Django, its own connection to the 
+database.
+This eliminates the need for connection pooling, because each Python 
+interpreter
+has only one connection to the database anyway. This architecture solves a lot
+of problems.</p>
+<p>Please also note that the second argument to the SQLMap constructor 
+is a location
+in your filesystem for where you keep your SQL templates. Using the example
+setting above, if you call 
+<code>SQL_MAP.select_commit(file='select_pets.sql')</code>, the 'file=' 
+argument will
+get translated to '/petstore-app/pybatis/select_pets.sql'. (Note how Pybatis
+does the right thing and inserts the slash between the config dir and the
+file name.)</p>
+
+<h3>Result Handling</h3>
+<h4>Return Data Structures</h4>
+<p>Each SQL map's select* methods return a list of dicts. The key names
+for each dict match the column names from the sql statements. As a matter
+of style, it is best to explicitly name your return columns so that
+you know what your keys will be:</p>
+<pre>
+results = SQL_MAP.select_commit(inline='''
+   select id      as "ID",
+          color  as "COLOR",
+          name    as "NAME"
+     from pets
+ order by "ID"
+''')
+# print all ids
+for row in results:
+    print "%(ID)i" % row
+</pre>
+<h4>When There Are No Results</h4>
+<p>If there are no results for your query, None will be returned,
+so you should always check for None.</p>
+<h4>Return Dict Types</h4>
+<p>Pybatis lets the underlying DB API driver decide what the return
+types will be for each column (and therefore each value in each dict).
+If you want to control the return
+types, use the casting capabilities of your SQL implementation. So,
+if our pets table is defined as</p>
+<pre>
+create table pets (
+    id bigint constraint "Pet ID must be unique." primary key not null,
+    color varchar(50) not null,
+    name varchar(50) constraint "Pet name must be unique." unique not null
+);
+</pre>
+<p>but you wanted to select the ID column as a string instead of an integer, 
+you could do this:
+<pre>
+results = SQL_MAP.select_commit(inline='''
+   select cast(id as text) as "ID"
+     from pets
+ order by "ID"
+''')
+# print all ids
+for row in results:
+    print "%(ID)s" % row  # now ID is a string, not an integer
+</pre>
+<p>Pybatis leaves it up to you to decide the best way to cast your
+values to the types you need.</p>
+<h4>Return Amounts</h4>
+<p>Generally, you should control return amounts from your
+SQL code:</p>
+<pre>
+   select id as "ID"
+     from pets
+    limit 10
+</pre>
+<p>However, sometimes you only want to return one row, or even
+one row with one column, and it would be a bit silly to return a
+a list of dicts.</p>
+<p>For instance, let's say this only returns one row:</p>
+<pre>
+select id as "ID",
+       color as "COLOR",
+       name as "NAME"
+  from pets
+ where id = cast(%(ID)s as bigint)
+</pre>
+<p>It would be a bit silly to return a list of dicts; you'd
+rather just get a dict. Well, you can, with the "ret" argument:</p>
+<pre>
+pet = SQL_MAP.select_commit(
+    ret=pybatis.RETURN_ONE_ROW,
+    inline='''
+   select id      as "ID",
+          color  as "COLOR",
+          name    as "NAME"
+     from pets
+ where id = cast(%(ID)s as bigint)
+''')
+# print the pet's NAME
+print "%(NAME)s" % pet
+</pre>
+
+<p>Sometimes you want to return just one column as a simple list
+of scalars, with no column heading.  You can do that:</p>
+<pre>
+pet_colors = SQL_MAP.select_commit(
+    ret=pybatis.RETURN_ONE_COLUMN,
+    inline='''
+   select distinct color as "COLOR"
+              from pets
+          order by "COLOR"
+''')
+# print alphabetical list of colors of all pets
+for color in pet_colors:
+    print "%s" % color
+</pre>
+
+
+<p>Other times you want to return just one column as a simple list
+of scalars, with no column heading, but you need to specify which
+column to return.  You can do that:</p>
+<pre>
+months = SQL_MAP.select_commit(
+    ret=pybatis.RETURN_ONE_COLUMN, col='NAME',
+    inline='''
+   select nbr as "NBR",
+          name as "NAME"
+     from months
+          order by "NBR"
+''')
+# print months in display order, not alphabetical order
+for month in months:
+    print "%s" % month
+</pre>
+
+
+<p>And, of course, sometimes you want to return just one scalar.
+You can do that too:</p>
+<pre>
+count = SQL_MAP.select_commit(
+    ret=pybatis.RETURN_ONE_DATUM,
+    inline='''
+   select count(*) as "COUNT"
+     from pets
+ order by "ID"
+''')
+# print the pet's NAME
+print "number of pets: %i" % count
+</pre>
+
+<h4>Massaging Return Results</h4>
+<p>Psycopg returns a list of dicts for all queries not constrained
+to return only one row (in which a lone dict is returned) 
+or one datum (in which a scalar is returned).</p>
+<p>Sometimes, however, you need to return something more complex.
+For instance, what if you needed to return a dict of dicts 
+(instead of the usual list of dicts) using one of the result set's
+columns as the key to the dict of dicts?
+One way to accomplish this looks like so:</p>
+<pre>
+def dict_by_name(results):
+    return_dict = {}
+    for row in results:
+        return_dict[row['NAME']] = row
+    return return_dict
+
+results = SQL_MAP.select_commit(inline='''
+   select name    as "NAME",
+          color  as "COLOR"
+     from pets
+''', map=form_values)
+
+colors_by_name = None
+if results is not None:
+    colors_by_name = dict_by_name(results)
+</pre>
+<p>Pretty straightforward. However, as an added convenience,
+you can hand the dict_by_name function, above, right into
+select_commit(), where the None check will be done for you
+and dict_by_name will be called with the result set (if the
+result set is not None, of course):</p>
+<pre>
+def dict_by_name(results):
+    return_dict = {}
+    for row in results:
+        return_dict[row['NAME']] = row
+    return return_dict
+
+colors_by_name = SQL_MAP.select_commit(inline='''
+   select name    as "NAME",
+          color  as "COLOR"
+     from pets
+''', map=form_values, transformer=dict_by_name)
+</pre>
+<p>Another obvious use of this is transformer functions
+that turn result rows into objects, if you should ever
+need to do such a thing.</p>
+<p>Finally, note that if you feed a transformer to the SQL map
+while asking it to RETURN_ONE_ROW, your transformer should expect
+to recieve one dict as an argument. And, if you feed a transformer
+to the SQL map while asking it to RETURN_ONE_DATUM, your
+transformer function should expect to recieve one scalar as an
+argument.</p>
+
+
+<h3>Input Types</h3>
+<p>In our examples above, you'll notice that we did our inputs
+as:</p>
+<pre>
+ where id = cast(%(ID)s as bigint)
+</pre>
+<p>Essentially, all we are doing is leveraging the underlying
+DB API implementation. In the case of Psycopg, the 'pyformat' parameter 
+style is used (example: <code>%(ID)s</code>), 
+and that's why you see it in the examples.</p>
+<p><strong>IMPORTANT:</strong> It's important to know that the
+Jinja templating is performed first, and <em>then</em> the DB API
+handles the parameters. This is important to know, because
+you'll want to use the DB API's parameter syntax
+to prevent SQL injection attacks! If you need to have the Jinja template
+engine put in variables instead, use Jinja's {{ some_var }} format instead,
+but NOTE that proper SQL escaping will not be done, because then
+you'll be using Jinja to render the varable and not DB API! One possible case
+where you might want to do such a thing:</p>
+<pre>
+select id as "ID"
+  from {{ TABLE }}
+ where id = cast(%(ID)s as bigint)
+</pre>
+<p>In the example above, Jinja will supply the value of TABLE
+(with no SQL escaping),
+whereas the DB API will supply the value of ID (providing SQL escaping).</p>
+<p>But if you don't fully understand (and protect against)
+the danger of the above code example, never use {{ VAR }}
+to get variables, but, instead, use %(VAR)s.</p>
+<p>Finally, note that in</p>
+<pre>
+ where id = cast(%(ID)s as bigint)
+</pre>
+<p>I explicitly cast the input value to match the column
+type of the table I'm querying. Instead of relying on the DB API
+to cast my input to the correct value, I find explicit SQL casting
+is a good habit to get into when dealing with inputs (in addition
+to all the other error correction/detection!).</p>
+
+
+<h3>Inserts and Updates</h3>
+<p>These work as expected, except you use the SQL map's execute*
+methods instead of the SQL map's select* methods.</p>
+<pre>
+        SQL_MAP.execute_commit(inline='''
+        insert into pets
+                    (id,
+                     color,
+                     name)
+             values (cast(%(ID)s as bigint),
+                     %(COLOR)s,
+                     %(NAME)s)
+                ''', map=form_values, render=False)
+</pre>
+<p>An update:</p>
+<pre>
+        SQL_MAP.execute_commit(inline='''
+        update pets
+           set color = %(COLOR)s
+         where id = cast(%(ID)s as bigint)
+                ''', map=form_values, render=False)
+
+</pre>
+<h3>Small Performance Enhancement</h3>
+<p>Note in our insert and update examples that we
+do not actually have any Jinja templating code
+in our examples&mdash;just DB API stuff. If you
+know that you don't need any template processing,
+you can turn it off for individual method calls
+by adding render=False to the method call,
+as we have done in the insert and update examples.</p>
+
+<h3>Stored Procedures</h3>
+<p>Stored procedures currently get called through the
+SQL map's execute* methods because that's all that's
+required by Psycopg's implementation of DB API:</p>
+<pre>
+    SQL_MAP.execute_commit(inline='''
+        select my_stored_proc(cast(%(ID)s as bigint),
+                              cast(%(SOME_OTHER_FIELD)s as bigint))
+    ''', map=form_values, render=False)
+</pre>
+<p>When a stored procedure needs to return something,
+the select* methods will work as well.</p>
+<p>Note that other implementations of pybatis.SQLMap
+may define a method callproc() to mimic that of the underlying
+DB API, even though this hasn't been done (and is unneccessary)
+for the psycopg2_jinja2 flavour.</p>
+
+<h3>Transactions and Exception Handling</h3>
+<p>So far, we have been using SQL_MAP.select_commit()
+and SQL_MAP.execute_commit(). Both of these methods
+explicitly begin a transaction, run the query, and
+commit the transaction. If the DB API throws an exception,
+select_commit and execute_commit will automatically roll 
+back the transaction
+and throw the exception up to the calling code to handle.
+Because of the convenience, you will find yourself
+using select_commit and execute_commit most of the time.</p>
+<p>However, sometimes you need to control the transaction
+and exception handling yourself. You do that using the
+SQL_MAP.select() and SQL_MAP.execute() methods,
+along with SQL_MAP.begin(), SQL_MAP.rollback(), SQL_MAP.commit(),
+and SQL_MAP.end().</p>
+<p>Here's a fully-detailed example, where we want to get the next
+available ID for a pet and then insert that pet all in one transaction.
+If an exception occurs, we want to roll back the transaction and catch
+the exception. If the exception is one we sometimes expect (in this
+case selecting a pet name that is already taken) we populate
+the string error_message with a user-friendly message and continue on
+to the (unwritten) error processing code. If we encounter a truly unexpected
+exception, we raise that exception (still rolling back the transaction!) 
+and let our (unwritten) more general
+exception handling mechanisms handle that.</p>
+<pre>
+    # NOTE:
+    # form_values['COLOR'] and form_values['NAME']
+    # are assumed to have been error-checked and contain
+    # legitimate values.
+    error_message = ''
+    try:
+        mt_config.SQL_MAP.begin()
+        new_pet_id = mt_config.SQL_MAP.select(
+            ret=pybatis.RETURN_ONE_DATUM,
+            inline='''
+                select nextval('pet_ids') as "ID"
+            ''')
+        form_values['ID'] = new_pet_id
+        mt_config.SQL_MAP.execute(inline='''
+            insert into pets
+                        (id,
+                         color,
+                         name)
+                 values (cast(%(ID)s as bigint),
+                         %(COLOR)s,
+                         %(NAME)s)
+        ''', map=form_values)
+        mt_config.SQL_MAP.commit()
+    except (psycopg2.IntegrityError,), e:
+        mt_config.SQL_MAP.rollback()
+        error_msg = str(e)
+        if error_msg.find('Pet name must be unique') &gt; -1:
+            error_message = 'Pet name already exists. Please pick another.'
+            # error_message would get used in later error handling
+            # when it is found to not be empty
+        else:
+            # not the integrity error we were expecting; rollback is alredy done; raise
+            raise
+    except:
+        mt_config.SQL_MAP.rollback()
+        raise
+    finally:
+        mt_config.SQL_MAP.end()  # IMPORTANT!!! Does final cleanup tasks
+</pre>
+
+
+<h3>Debugging</h3>
+<p>NOTE: Debugging depends on
+the logging module, which comes standard with Python.</p>
+<p>Debugging is configured on a per SQL map basis, and then,
+at your option, on a per-call basis.</p>
+<p>To have a SQL map log everything that it usally logs, do the following:</p>
+<pre>
+import psycopg2
+import psycopg2.extras
+import pybatis
+import pybatis.psycopg2_jinja2
+import logging
+logging.getLogger().setLevel(logging.DEBUG)
+SQL_MAP = pybatis.psycopg2_jinja2.SQLMap(conn, '/petstore-app/pybatis', \
+    log_behaviour=pybatis.LOG_EVERYTHING)
+</pre>
+<p>Now SQL_MAP's calls to logging.debug(), and all higher logging levels,
+will go to wherever you configure logging to put log messages (usually
+standard out by default, but check the docs for the logging module).</p>
+<p>This is a good time to point out that the default setting of any
+SQL map is to log nothing. (A nice production setting.)</p>
+<p>Sometimes, however, you want to only log the results of a particular
+query that you are trying to debug. Here's the best way to do that
+using LOG_PER_CALL:</p>
+<pre>
+import psycopg2
+import psycopg2.extras
+import pybatis
+import pybatis.psycopg2_jinja2
+import logging
+logging.getLogger().setLevel(logging.DEBUG)
+SQL_MAP = pybatis.psycopg2_jinja2.SQLMap(conn, '/petstore-app/pybatis', \
+    log_behaviour=pybatis.LOG_PER_CALL)
+results = SQL_MAP.select_commit(file='select_pets.sql', \
+    map=form_values, log=True)  # this will log to logging
+results = SQL_MAP.select_commit(file='select_pets.sql', 
+    map=form_values, log=False)  # this will not
+results = SQL_MAP.select_commit(file='select_pets.sql', \
+    map=form_values)  # this will not
+</pre>
+
+<h3>Tips and Tricks</h3>
+<p>Let's say you need to build up a where clause conditionally
+like so:</p>
+<pre>
+   select id      as "ID",
+          color  as "COLOR",
+          name    as "NAME"
+     from pets
+    where
+  {% if ID is not_empty %}
+          id = cast(%(ID)s as bigint)
+  {% endif %}
+  {% if COLOR is not_empty %}
+          and color = %(COLOR)s
+  {% endif %}
+  {% if NAME is not_empty %}
+          and name = %(NAME)s
+  {% endif %}
+</pre>
+<p>The above code has problems, because if COLOR is present,
+but ID is not, you end up with</p>
+<pre>
+    where
+          and color = %(COLOR)s
+</pre>
+<p>which is incorrect SQL. The easiest solution is this:</p>
+<pre>
+    where
+          1 = 1
+  {% if ID is not_empty %}
+          and id = cast(%(ID)s as bigint)
+  {% endif %}
+  {% if COLOR is not_empty %}
+          and color = %(COLOR)s
+  {% endif %}
+  {% if NAME is not_empty %}
+          and name = %(NAME)s
+  {% endif %}
+</pre>
+<p>That way, if nothing is defined, you get</p>
+<pre>
+    where
+          1 = 1
+</pre>
+<p>which evaluates the same as not having the where clause
+at all. But you can also have any combination of the expected
+parameters defined and also get correct SQL. For instance,
+if ID and COLOR are defined and NAME is not, you get:</p>
+<pre>
+    where
+          1 = 1
+          and id = cast(%(ID)s as bigint)
+          and color = %(COLOR)s
+</pre>
+<p>which works very well.</p>
+
+<h2>Philosophy</h2>
+<p>This section can safely be skipped, unless you are
+curious as to what it is I like about the iBATIS way of
+thinking, and what motivated my design of Pybatis.</p>
+<h3>ORM is the Vietnam of Computer Science</h3>
+<p>Ted Neward's 
+<a href="http://blogs.tedneward.com/2006/06/26/The+Vietnam+Of+Computer+Science.aspx">
+blog entry likening object relational mapping to the Vietnam of computer science</a>
+is a must read if you want to understand why products
+like iBATIS (and Pybatis) exist. ORM is generally the most
+popular way of doing web sites, and is used when you need
+to push object modelling down into your database. Pybatis
+can be used if you need to do the opposite: pull your relational
+model up into your business layer. Both architectures have
+their plusses and minuses; Pybatis supports the not-as-well-covered
+alternative to ORM.</p>
+<h3>Writing SQL by Hand Can Enhance Performance and Correctness</h3>
+<p>Some projects require writing SQL by hand. For database-centric
+applications, exposing the database, and controlling the SQL
+queries that go to the database, is a desireable approach.
+</p>
+<h3>Portable SQL is Sometimes Not Required</h3>
+<p>For database-centric applications, abstracting
+away the database behind an ORM is sometimes not desireable.
+Some database-centric applications
+need the specific feature sets of the databases they use,
+and these features need to be exposed and made easier to
+use, rather than hidden and made impossible to use in 
+an attempt to maintain portability.</p>
+<h3>Dynamic SQL is Not a Compilation Problem; it is a Templating Problem</h3>
+<p>ORMs generate SQL somewhat the way a C compiler might
+generate machine code: the C programmer does not write machine
+code; the compiler does. Pybatis generates SQL the way
+a templating system might generate HTML: the HTML coder writes
+HTML the whole time, using a template engine to enhance the
+HTML generation. Both approaches have their plusses and minuses.
+Pybatis supports the second approach.</p>
+<h3>Objects vs. Lists of Maps</h3>
+<p>Object relational mapping is only required when your
+application uses full-fledged objects to shuttle data to and
+from the business layer to the RDBMS. Lighter-weight software designs
+that only need lists and maps (dicts in Python) only need SQL mapping,
+not object mapping. Such light-weight approaches, in a sense, pull
+the relational model up into the business layer, if required. For
+applications where the data model is done in the database, this can
+be a useful approach. Pybatis supports this.</p>
+</body>
+</html>
+

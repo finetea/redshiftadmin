@@ -17,4 +17,3 @@ by finetea@gmail.com (20151222)
 - DataTables 1.10.10 : [link](https://www.datatables.net/)
 - django-tables2-1.0.5
 
-test
