@@ -13,7 +13,7 @@ https://docs.djangoproject.com/en/1.8/ref/settings/
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MAPPER_DIR = os.path.join(BASE_DIR, 'mapper')
 
 # Quick-start development settings - unsuitable for production
@@ -84,6 +84,7 @@ DATABASES = {
     }
 }
 
+CONNECTION_INFO = 'user=postgres dbname=testdb password=testpass!! host=localhost port=54390'
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.8/topics/i18n/

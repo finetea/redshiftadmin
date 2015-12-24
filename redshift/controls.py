@@ -6,7 +6,7 @@ import django_tables2 as tables
 class RedshiftDBController:
 
 	@staticmethod
-	def define_table(table_name, columns):
+	def define_table_class(table_name, columns):
 	    attrs = dict((c, tables.Column()) for c in columns)
 	    klass = type(table_name, (tables.Table,), attrs)
 	    return klass

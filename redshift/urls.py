@@ -18,5 +18,7 @@ from django.conf.urls import include, url
 from . import views
 
 urlpatterns = [
-    url(r'^show_tables$', views.show_tables),
+    url(r'^table_info$', views.show_table_info),
+    url(r'^view/(?P<page>\w+)', views.view_page),
+    url(r'^data/(?P<source>\w+)', views.get_json_data),
 ]

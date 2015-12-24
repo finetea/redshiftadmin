@@ -1,0 +1,12 @@
+<!-- view_page.html -->
+
+{% extends 'datatable_base.html' %}
+{% load render_table from django_tables2 %}
+
+{% block pagetitle %}
+	<h1>View Page (Experimental)</h1>
+{% endblock %}
+
+{% block content %}
+{% render_table table %}
+{% endblock %}
