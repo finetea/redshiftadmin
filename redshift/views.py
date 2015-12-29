@@ -18,7 +18,10 @@ SESSIONKEY_DATASOURCE	= 'SELECTED_DATASOURCE'
 def view_page(request, view, datasource):
 	#menu part
 	request.session[SESSIONKEY_VIEW] = view
-	request.session[SESSIONKEY_DATASOURCE] = datasource	
+	request.session[SESSIONKEY_DATASOURCE] = datasource
+	
+	ds = DBQuery.objects.get(title=datasource)
+	pagetitle = 'Description: [%s] view of datasource [%s], %s' %(view, datasource, ds.desc)	
 	conns = DBConnection.objects.all()
 	views = ['datatable']
 	datasources = DBQuery.objects.all()
@@ -27,7 +30,7 @@ def view_page(request, view, datasource):
 	error = None
 	if isinstance(table, basestring):
 		error = table
-	return render(request, 'view_page.html', {'connections':conns, 'views':views, 'datasources':datasources, 'error':error, 'table':table})
+	return render(request, 'view_page.html', {'pagetitle':pagetitle, 'connections':conns, 'views':views, 'datasources':datasources, 'error':error, 'table':table})
 
 def view_page_default(request):
 	selected_view = request.session.get(SESSIONKEY_VIEW, DEFAULT_VIEW)
