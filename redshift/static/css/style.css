@@ -1,0 +1,80 @@
+# Empty CSS file for your own CSS
+
+
+.tooltip .txt {
+    width:200px;
+    padding:10px 15px;
+    display:none;
+    position:absolute;
+    z-index:1000;
+    border-radius:3px;
+    background:rgba(0,0,0,0.75);
+    /* Type */
+    font-size:12px;
+    text-shadow:-1px 1px 0px rgba(0,0,0,0.2);
+    line-height:150%;
+    color:#fff;
+}
+
+.tooltip .txt:before {
+    width:0px;
+    padding:0px;
+    position:absolute;
+    content:'';
+}
+
+/* Top */
+.tooltip.top .txt {
+    bottom:20px;
+    left:-10px;
+}
+ 
+.tooltip.top .txt:before {
+    bottom:-5px;
+    left:10px;
+    border-left:5px solid transparent;
+    border-right:5px solid transparent; 
+    border-top:5px solid rgba(0,0,0,0.75); 
+}
+ 
+/* Right */
+.tooltip.right .txt {
+    top:-10px;
+    left:20px;
+}
+ 
+.tooltip.right .txt:before {
+    top:10px;
+    left:-5px;
+    border-top:5px solid transparent;
+    border-bottom:5px solid transparent; 
+    border-right:5px solid rgba(0,0,0,0.75); 
+}
+ 
+/* Bottom */
+.tooltip.bottom .txt {
+    top:20px;
+    left:-10px;
+}
+ 
+.tooltip.bottom .txt:before {
+    top:-5px;
+    left:10px;
+    border-left:5px solid transparent;
+    border-right:5px solid transparent; 
+    border-bottom:5px solid rgba(0,0,0,0.75); 
+}
+ 
+/* Left */
+.tooltip.left .txt {
+    top:-10px;
+    right:20px;
+}
+ 
+.tooltip.left .txt:before {
+    top:10px;
+    right:-5px;
+    border-top:5px solid transparent;
+    border-bottom:5px solid transparent; 
+    border-left:5px solid rgba(0,0,0,0.75); 
+}

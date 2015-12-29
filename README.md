@@ -6,13 +6,11 @@ by finetea@gmail.com (20151222)
 
 ## Usage
 - Make an SSH tunnel to your Redshift endpoint from your localhost with port 54390
-- Change CONNECTION_INFO in settings.py file
 - Run server : python manage.py runserver
+- Go to Admin page and register your connection info and DB queries for data sources
 - Access by web browser : http://127.0.0.1:8000
 - Admin page for the site : http://127.0.0.1:8000/admin
 - Admin account: suser/suser
-
-
 
 ## Dependency
 - PyBatis 1.5 : [link](https://github.com/manniwood/Pybatis)

@@ -12,9 +12,9 @@ https://docs.djangoproject.com/en/1.8/ref/settings/
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
+from django.conf.global_settings import SESSION_ENGINE
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MAPPER_DIR = os.path.join(BASE_DIR, 'mapper')
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.8/howto/deployment/checklist/
@@ -73,6 +73,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'wsgi.application'
 
+SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
 
 # Database
 # https://docs.djangoproject.com/en/1.8/ref/settings/#databases
@@ -83,8 +84,6 @@ DATABASES = {
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
 }
-
-CONNECTION_INFO = 'user=postgres dbname=testdb password=testpass!! host=localhost port=54390'
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.8/topics/i18n/

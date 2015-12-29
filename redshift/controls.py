@@ -2,7 +2,6 @@ from __future__ import unicode_literals
 
 import django_tables2 as tables
 
-
 class RedshiftDBController:
 
 	@staticmethod
@@ -13,8 +12,11 @@ class RedshiftDBController:
 
 	@staticmethod
 	def make_table(colnames, results):
-	    "Return all rows from a cursor as a dict"
-	    return [
-	        dict(zip(colnames, row))
-	        for row in results
-	    ]
+		"Return all rows from a cursor as a dict"
+		if results == None or len(results) == 0:
+			results = []
+		return [
+			dict(zip(colnames, row))
+			for row in results
+		]
+

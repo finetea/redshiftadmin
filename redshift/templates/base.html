@@ -1,0 +1,170 @@
+<!-- base.html -->
+{% load render_table from django_tables2 %}
+{% load staticfiles %}
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Redshift Admin Tool</title>
+
+    <meta name="description" content="Source code generated using layoutit.com">
+    <meta name="author" content="LayoutIt!">
+
+	<link rel="shortcut icon" type="image/ico" href="{% static 'redshift.favicon.ico' %}"/>
+	<link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+	<link rel="stylesheet" type="text/css" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css">
+	<link rel="stylesheet" type="text/css" href="http://cdn.datatables.net/1.10.10/css/jquery.dataTables.css">
+	<link rel="stylesheet" type="text/css" href="http://cdn.datatables.net/buttons/1.1.0/css/buttons.dataTables.min.css">
+
+    <link href="{% static 'css/style.css' %}" rel="stylesheet">
+
+	<script type="text/javascript" charset="utf8" src="http://code.jquery.com/jquery-1.11.3.min.js"></script>
+	<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.10/js/jquery.dataTables.min.js"></script>
+	<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/buttons/1.1.0/js/dataTables.buttons.min.js"></script>
+	
+	<script type="text/javascript" charset="utf8" src="http://cdn.datatables.net/buttons/1.1.0/js/buttons.flash.min.js"></script>
+	<script type="text/javascript" charset="utf8" src="http://cdnjs.cloudflare.com/ajax/libs/jszip/2.5.0/jszip.min.js"></script>
+	<script type="text/javascript" charset="utf8" src="http://cdn.rawgit.com/bpampuch/pdfmake/0.1.18/build/pdfmake.min.js"></script>
+	<script type="text/javascript" charset="utf8" src="http://cdn.rawgit.com/bpampuch/pdfmake/0.1.18/build/vfs_fonts.js"></script>
+	<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/buttons/1.1.0/js/buttons.html5.min.js"></script>
+	<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/buttons/1.1.0/js/buttons.print.min.js"></script>
+	<script type="text/javascript" charset="utf8" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+
+    <!--  
+    <script src="{% static 'js/scripts.js' %}"></script>
+     -->
+			
+	<script type="text/javascript" charset="utf8">
+		$(document).ready( function () {
+			$('#table_id').dataTable({
+				"dom": '<"top"lBf>rt<"bottom"ip><"clear">',
+		        "lengthMenu": [[10, 20, 50, -1], [10, 20, 50, "All"]],
+				"pagingType": "full_numbers",
+				buttons: [
+		            'copy', 'csv', 'excel', 'pdf', 'print'
+		        ]
+			});
+		});
+	</script>
+
+  </head>
+  <body>
+
+<div class="container-fluid">
+	<div class="row">
+		<!-- Block to show header -->
+		<div class="col-md-12">
+			<div class="page-header">
+				<h1>
+					Redshift Administration Tools (Experimental)
+				</h1>
+				<p>
+	            {% block pagetitle %}
+	            {% endblock %}
+	            </p>
+			</div>
+		</div>
+	</div>
+	<div class="row">
+		<!-- Block to show menu -->
+		<div class="col-md-2">
+			<div class="btn-group">				 
+				<button class="btn btn-default">
+					Select DB Connection
+				</button> 
+				<button data-toggle="dropdown" class="btn btn-default dropdown-toggle">
+					<span class="caret"></span>
+				</button>
+				{% if connections %}
+					<ul class="dropdown-menu">
+						{% for conn in connections %}
+							<li>
+								<a href='/redshift/conn/{{ conn.title }}'>
+									{% if conn.title == request.session.SELECTED_CONNECTION %}
+										<b>{{ conn.title }}</b>
+									{% else %}
+										{{ conn.title }}
+									{% endif %}
+								</a>								
+<!-- 							<a class="tooltip" href="#">
+									{{ conn.title }}
+								    <span class="txt">
+								    DB Name: {{ conn.dbname }} <br>
+								    User: {{ conn.user }} <br>
+								    Host: {{ conn.host }}:{{ conn.port }}
+								    </span>
+								</a>
+-->
+							</li>
+						{% endfor %}
+					</ul>
+				{% endif %}
+			</div>
+			<br><br>
+			<div class="panel-group" id="panel-549480">
+				<div class="panel panel-default">
+					<div class="panel-heading">
+						 <a class="panel-title" data-toggle="collapse" data-parent="#panel-549480" href="#panel-element-85932">
+						 Views</a>
+					</div>
+					<div id="panel-element-85932" class="panel-collapse collapse in">
+						{% if views %}
+							{% for vs in views %}
+								<div class="panel-body">
+									<a href='/redshift/view/{{ vs }}/{{ request.session.SELECTED_DATASOURCE }}'>
+									{% if vs == request.session.SELECTED_VIEW %}
+										<b>{{ vs }}</b>
+									{% else %}
+										{{ vs }}
+									{% endif %}
+									</a>
+								</div>
+							{% endfor %}
+						{% endif %}
+					</div>
+				</div>
+				<div class="panel panel-default">
+					<div class="panel-heading">
+						 <a class="panel-title collapsed" data-toggle="collapse" data-parent="#panel-549480" href="#panel-element-329184">
+						 Data Sources</a>
+					</div>
+					<div id="panel-element-329184" class="panel-collapse collapse">
+						{% if datasources %}
+							{% for source in datasources %}
+								<div class="panel-body">
+									<a href='/redshift/view/{{ request.session.SELECTED_VIEW }}/{{ source.title }}'>
+									{% if source.title == request.session.SELECTED_DATASOURCE %}
+										<b>{{ source.title }}</b>
+									{% else %}
+										{{ source.title }}
+									{% endif %}
+									</a>
+								</div>
+							{% endfor %}
+						{% else %}
+							<div class="panel-body">
+								No data source found. Add query first as Admin!
+							</div>
+						{% endif %}
+					</div>
+				</div>
+			</div>
+		</div>
+		<!-- Block to show data -->
+		<div class="col-md-10">
+			{% if error %}
+				<font size=12 color="red">{{ error }}</font>
+			{% else %}
+	            {% block content %}
+	            {% endblock %}
+            {% endif %}
+		</div>
+	</div>
+</div>
+
+  </body>
+</html>
