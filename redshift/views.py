@@ -19,6 +19,8 @@ def view_page_old(request, view, datasource):
 	#menu part
 	request.session[SESSIONKEY_VIEW] = view
 	request.session[SESSIONKEY_DATASOURCE] = datasource
+	if not request.session.has_key(SESSIONKEY_CONNECTION):
+		request.session[SESSIONKEY_CONNECTION] = DBConnection.objects.all()[0].title
 	
 	ds = DBQuery.objects.get(title=datasource)
 	pagetitle = 'Description: [%s] view of datasource [%s], %s' %(view, datasource, ds.desc)	
@@ -29,7 +31,7 @@ def view_page_old(request, view, datasource):
 	table = get_result_table(request.session[SESSIONKEY_CONNECTION], datasource)
 	error = None
 	if isinstance(table, basestring):
-		error = table
+		error = 'Error: %s'%table
 	return render(request, 'view_page_old.html', {'pagetitle':pagetitle, 'connections':conns, 'views':views, 'datasources':datasources, 'error':error, 'table':table})
 
 def view_page(request, view, datasource):
