@@ -3,7 +3,7 @@
 from django.conf import settings
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse, Http404
-from redshift.models import DBConnection, DBQuery, get_result_table, get_result
+from redshift.models import DBConnection, DBQuery, get_result
 from redshift.controls import RedshiftDBController
 
 DEFAULT_CONNECTION		= 'none'
@@ -15,36 +15,22 @@ SESSIONKEY_DATASOURCE	= 'SELECTED_DATASOURCE'
 
 # Create your views here.
 
-def view_page_old(request, view, datasource):
-	#menu part
-	request.session[SESSIONKEY_VIEW] = view
-	request.session[SESSIONKEY_DATASOURCE] = datasource
-	if not request.session.has_key(SESSIONKEY_CONNECTION):
-		request.session[SESSIONKEY_CONNECTION] = DBConnection.objects.all()[0].title
-	
-	ds = DBQuery.objects.get(title=datasource)
-	pagetitle = 'Description: [%s] view of datasource [%s], %s' %(view, datasource, ds.desc)	
-	conns = DBConnection.objects.all()
-	views = ['datatable','pivottable']
-	datasources = DBQuery.objects.all()
-	#content part
-	table = get_result_table(request.session[SESSIONKEY_CONNECTION], datasource)
-	error = None
-	if isinstance(table, basestring):
-		error = 'Error: %s'%table
-	return render(request, 'view_page_old.html', {'pagetitle':pagetitle, 'connections':conns, 'views':views, 'datasources':datasources, 'error':error, 'table':table})
-
 def view_page(request, view, datasource):
-	#menu part
 	request.session[SESSIONKEY_VIEW] = view
 	request.session[SESSIONKEY_DATASOURCE] = datasource
 	
-	ds = DBQuery.objects.get(title=datasource)
-	pagetitle = 'Description: [%s] view of datasource [%s], %s' %(view, datasource, ds.desc)	
+	ds = None
+	desc = None
+	try:
+		ds = DBQuery.objects.get(title=datasource)
+		desc = ds.desc
+	except Exception as e:
+		desc = 'Error: No datasource found.'
+		
+	pagetitle = 'Description: [%s] view of datasource [%s], %s' %(view, datasource, desc)	
 	conns = DBConnection.objects.all()
 	views = ['datatable']
 	datasources = DBQuery.objects.all()
-	#content part
 	return render(request, 'view_page.html', {'pagetitle':pagetitle, 'connections':conns, 'views':views, 'datasources':datasources, 'data':datasource})
 
 
@@ -66,9 +52,8 @@ def set_connection(request, connection):
 def get_data(request, datasource):
 	result = get_result(request.session[SESSIONKEY_CONNECTION], datasource)
 	dic = {}
-	error = None
 	if isinstance(result, basestring):
-		error = result
+		dic["error"] = result #gets error message
 	else:
 		(cols, res) = result
 		dic["columns"] = cols

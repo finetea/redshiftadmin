@@ -59,10 +59,15 @@
             $.ajax( {
 				url:"/redshift/data/{{ data }}",
                 success: function (json) {
-                	$('#table_id').dataTable(json);
+                	if (json["error"]) {
+                        $('#datatable_content_id').html('<p><font size=10 color="red">' + json["error"] + '</font></p>')
+                	}
+                	else {
+                		$('#table_id').dataTable(json);
+                	}
                 },
                 dataType: "json"
-            } );           
+            } );
             
 			/*** old version
             $('#table_id').dataTable({

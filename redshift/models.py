@@ -47,46 +47,6 @@ class DBQuery(models.Model):
 	query = models.TextField(max_length=4096)
 	#end of class DBQuery
 
-def get_result_table(connection_title, source):
-	logging.getLogger().setLevel(logging.DEBUG)
-	
-	try:
-		connobj = DBConnection.objects.get(title=connection_title)
-	except Exception as e:
-		return 'Set connection info first by Admin'
-	
-	conninfo = connobj.get_conn_str()
-	if isinstance(conninfo, unicode):
-		conninfo = conninfo.encode("UTF-8")
-	
-	logging.info("Connection info from get_result_table() [%s]" % conninfo)
-	
-	try:
-		queryitem = DBQuery.objects.get(title=source)
-	except Exception as e:
-		return 'Set query first by Admin'
-	
-	try:
-		conn = psycopg2.connect(conninfo)
-	except Exception as e:
-		return 'Connection is not established'
-	
-	SQL_MAP = pg2.SQLMap(conn, '', log_behaviour=pybatis.LOG_PER_CALL)
-	SQL_MAP.begin()
-	results = SQL_MAP.select(inline=queryitem.query, log=True)
-	colnames = SQL_MAP.get_colnames()
-	SQL_MAP.end()
-	res = RedshiftDBController.make_result_dict(colnames, results)
-	
-	if isinstance(source, unicode):
-		source = source.encode("UTF-8")
-	table = RedshiftDBController.define_table_class(source, colnames)(res)
-	table.attrs['id'] = 'table_id'
-	table.attrs['class'] = 'display'
-	table.orderable = False
-	return table
-	#end of function get_result_table()
-
 #returns tuple of colname list and result dictionary, error string when gets error
 def get_result(connection_title, source):
 	logging.getLogger().setLevel(logging.DEBUG)
