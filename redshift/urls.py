@@ -21,4 +21,5 @@ urlpatterns = [
     url(r'^$', views.view_page_default),
     url(r'^view/(?P<view>\w+)/(?P<datasource>\w+)', views.view_page),
     url(r'^conn/(?P<connection>\w+)/$', views.set_connection),
+    url(r'^data/(?P<datasource>\w+)/$', views.get_data),
 ]

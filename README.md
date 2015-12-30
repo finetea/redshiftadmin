@@ -15,7 +15,7 @@ by finetea@gmail.com (20151222)
 ## Dependency
 - PyBatis 1.5 : [link](https://github.com/manniwood/Pybatis)
 - DataTables 1.10.10 : [link](https://www.datatables.net/)
-- django-tables2-1.0.5
 
 ## Reference
 - amazon-redshift-utils : [link](https://github.com/awslabs/amazon-redshift-utils)
+- Top-10-Performance-Tuning-Techniques-for-Amazon-Redshift: [link](https://blogs.aws.amazon.com/bigdata/post/Tx31034QG0G3ED1/Top-10-Performance-Tuning-Techniques-for-Amazon-Redshift)

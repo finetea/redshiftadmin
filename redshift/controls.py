@@ -11,7 +11,7 @@ class RedshiftDBController:
 	    return klass
 
 	@staticmethod
-	def make_table(colnames, results):
+	def make_result_dict(colnames, results):
 		"Return all rows from a cursor as a dict"
 		if results == None or len(results) == 0:
 			results = []
@@ -20,3 +20,10 @@ class RedshiftDBController:
 			for row in results
 		]
 
+	@staticmethod
+	def make_column_dict(colnames):
+		result = []
+		for name in colnames:
+			result.append({"title":name, "data":name})
+		
+		return result
