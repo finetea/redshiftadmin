@@ -15,6 +15,7 @@ by finetea@gmail.com (20151222)
 ## Dependency
 - PyBatis 1.5 : [link](https://github.com/manniwood/Pybatis)
 - DataTables 1.10.10 : [link](https://www.datatables.net/)
+- PivotTable.js : [link](https://github.com/nicolaskruchten/pivottable)
 
 ## Reference
 - amazon-redshift-utils : [link](https://github.com/awslabs/amazon-redshift-utils)

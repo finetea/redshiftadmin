@@ -29,7 +29,7 @@ def view_page(request, view, datasource):
 		
 	pagetitle = 'Description: [%s] view of datasource [%s], %s' %(view, datasource, desc)	
 	conns = DBConnection.objects.all()
-	views = ['datatable']
+	views = ['datatable', 'pivottable']
 	datasources = DBQuery.objects.all()
 	return render(request, 'view_page.html', {'pagetitle':pagetitle, 'connections':conns, 'views':views, 'datasources':datasources, 'data':datasource})
 
