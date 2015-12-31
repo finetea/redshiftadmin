@@ -72,9 +72,11 @@ def get_result(connection_title, source):
 	except Exception as e:
 		return 'Connection is not established'
 	
+	query = queryitem.query.replace("%", "%%")	#python recognize % as a special char, so replace it with %%. 
+	
 	SQL_MAP = pg2.SQLMap(conn, '', log_behaviour=pybatis.LOG_PER_CALL)
 	SQL_MAP.begin()
-	results = SQL_MAP.select(inline=queryitem.query, log=True)
+	results = SQL_MAP.select(inline=query, log=True)
 	colnames = SQL_MAP.get_colnames()
 	SQL_MAP.end()
 	
